@@ -126,30 +126,37 @@ export default function CalendarPage() {
   const renderCalendarDays = () => {
     const cells = [];
     const today = new Date();
+    const totalCells = 42; // fixed 6-week grid for consistent mobile rendering
 
-    for (let i = 0; i < firstDay; i++) {
-      cells.push(<div key={`empty-${i}`} className="day-cell empty" />);
-    }
-
-    for (let d = 1; d <= daysInMonth; d++) {
-      const isToday =
-        d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
-
-      const dateStr = toDateString(year, month, d);
-      const schedule = schedules[dateStr];
-      const dayOfWeek = (firstDay + d - 1) % 7;
+    for (let cellIndex = 0; cellIndex < totalCells; cellIndex++) {
+      const dayOfWeek = cellIndex % 7;
+      const dayNumber = cellIndex - firstDay + 1;
+      const inCurrentMonth = dayNumber >= 1 && dayNumber <= daysInMonth;
 
       let weekendClass = '';
       if (dayOfWeek === 0) weekendClass = 'sunday';
       if (dayOfWeek === 6) weekendClass = 'saturday';
 
+      if (!inCurrentMonth) {
+        cells.push(
+          <div key={`empty-${cellIndex}`} className="day-cell empty" aria-hidden="true" />
+        );
+        continue;
+      }
+
+      const isToday =
+        dayNumber === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+
+      const dateStr = toDateString(year, month, dayNumber);
+      const schedule = schedules[dateStr];
+
       cells.push(
         <div
-          key={d}
+          key={dateStr}
           className={`day-cell ${isToday ? 'today' : ''} ${weekendClass}`}
-          onClick={() => handleDayClick(d)}
+          onClick={() => handleDayClick(dayNumber)}
         >
-          <span className="day-num">{d}</span>
+          <span className="day-num">{dayNumber}</span>
           {schedule?.memo && (
             <div
               className="schedule-indicator"
