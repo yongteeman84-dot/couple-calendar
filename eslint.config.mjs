@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local utility scripts (CommonJS)
+    "puppeteer_test.js",
+    "test_db.js",
   ]),
 ]);
 

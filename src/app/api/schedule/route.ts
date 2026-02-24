@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { Pool } from 'pg';
 
+const DEFAULT_COLOR = '#ec4899';
+
 // Initialize connection pool
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
@@ -52,6 +54,8 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const { date, memo, color } = await request.json();
+        const normalizedMemo = typeof memo === 'string' ? memo.trim() : '';
+        const normalizedColor = typeof color === 'string' ? color : '';
 
         if (!date) {
             return NextResponse.json({ error: 'Date is required' }, { status: 400 });
@@ -59,8 +63,9 @@ export async function POST(request: Request) {
 
         const client = await pool.connect();
         try {
-            // Delete if empty, otherwise Upsert
-            if (!memo && !color) {
+            // Delete when memo is empty and color is missing/default; otherwise upsert.
+            const shouldDelete = normalizedMemo.length === 0 && (!normalizedColor || normalizedColor === DEFAULT_COLOR);
+            if (shouldDelete) {
                 await client.query('DELETE FROM schedules WHERE date = $1', [date]);
             } else {
                 await client.query(`
@@ -68,7 +73,7 @@ export async function POST(request: Request) {
           VALUES ($1, $2, $3)
           ON CONFLICT (date) DO UPDATE 
           SET memo = EXCLUDED.memo, color = EXCLUDED.color;
-        `, [date, memo || '', color || '#ffffff']);
+        `, [date, normalizedMemo, normalizedColor || DEFAULT_COLOR]);
             }
 
             return NextResponse.json({ success: true });
